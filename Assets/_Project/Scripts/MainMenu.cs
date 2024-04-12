@@ -9,12 +9,14 @@ using UnityEngine;
 
 public class MainMenu : MonoBehaviour
 {
+    [SerializeField] private GameObject _close;
+    [SerializeField] private GameObject _profile;
     [SerializeField] private TextMeshProUGUI _coinText;
     [SerializeField] private List<GameObject> _buttons;
     [SerializeField] private List<GameObject> _panels;
     [SerializeField] private Bonus _bonusPanel;
 
-    private void Start()
+    private void Awake()
     {
         PlayerData.Amount.ObserveEveryValueChanged(_ => _.Value)
             .Subscribe(BalanceChanged)
@@ -30,7 +32,7 @@ public class MainMenu : MonoBehaviour
             PlayerPrefs.Save();
         }
     }
-
+    
     private void BalanceChanged(decimal amount)
     {
         _coinText.text = amount.ToString();
@@ -38,6 +40,17 @@ public class MainMenu : MonoBehaviour
     
     public void Selected(int i)
     {
+        if (i == 4)
+        {
+            _panels[i].SetActive(true);
+            return;
+        }
+        if (i == 3)
+        {
+            _panels[4].SetActive(false);
+            _panels[i].SetActive(true);
+            return;
+        }
         foreach (var b in _buttons)
             b.SetActive(false); 
         foreach (var p in _panels)
@@ -45,6 +58,9 @@ public class MainMenu : MonoBehaviour
         
         _buttons[i].SetActive(true);
         _panels[i].SetActive(true);
+
+        _close.SetActive(i is 0 or 2);
+        _profile.SetActive(i == 1);
         if(i == 2)
             _bonusPanel.OpenBonus();
     }
