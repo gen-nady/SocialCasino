@@ -1,5 +1,3 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using _Project.Scripts;
 using _Project.Scripts.Helpers;
@@ -15,6 +13,7 @@ public class MainMenu : MonoBehaviour
     [SerializeField] private List<GameObject> _buttons;
     [SerializeField] private List<GameObject> _panels;
     [SerializeField] private Bonus _bonusPanel;
+    [SerializeField] private GameObject _bottomPanels;
 
     private void Awake()
     {
@@ -40,6 +39,15 @@ public class MainMenu : MonoBehaviour
     
     public void Selected(int i)
     {
+        if (i == 5)
+        {
+            _panels[i].SetActive(true);
+            _close.SetActive(true);
+            _profile.SetActive(false);
+            _bottomPanels.SetActive(false);
+            return;
+        }
+        _bottomPanels.SetActive(true);
         if (i == 4)
         {
             _panels[i].SetActive(true);
