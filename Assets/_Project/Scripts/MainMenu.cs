@@ -34,11 +34,20 @@ public class MainMenu : MonoBehaviour
     
     private void BalanceChanged(decimal amount)
     {
-        _coinText.text = amount.ToString();
+        _coinText.text = CountValuesConverter.From1000toK(amount);
     }
     
     public void Selected(int i)
     {
+        
+        if (i == 6)
+        {
+            _panels[i].SetActive(true);
+            _close.SetActive(true);
+            _profile.SetActive(false);
+            _bottomPanels.SetActive(false);
+            return;
+        }
         if (i == 5)
         {
             _panels[i].SetActive(true);

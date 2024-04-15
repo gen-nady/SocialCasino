@@ -41,6 +41,8 @@ namespace _Project.Scripts.Vegas
             }
 
             PlayerData.Amount.Value -= _curBet;
+            PlayerPrefs.SetString("Coin", PlayerData.Amount.ToString());
+            PlayerPrefs.Save();
             Observable.FromCoroutine(SpinRollers).Subscribe();
         }
         
@@ -64,6 +66,8 @@ namespace _Project.Scripts.Vegas
                     Rollers[1].Items[j].Type == Rollers[2].Items[j].Type)
                 {
                     PlayerData.Amount.Value += _curBet * 3;
+                    PlayerPrefs.SetString("Coin", PlayerData.Amount.ToString());
+                    PlayerPrefs.Save();
                 }
             }
             _spinButton.interactable = true;

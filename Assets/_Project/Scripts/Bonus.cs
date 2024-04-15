@@ -57,7 +57,6 @@ public class Bonus : MonoBehaviour
         if (PlayerPrefs.HasKey("Bonus"))
         {
             var time = _curDate - DateTime.Parse(PlayerPrefs.GetString("Bonus"));
-            _curDate = default;
             _curDate = _curDate.AddDays(1).AddDays(-time.TotalDays);
             if (time.TotalDays < 1)
             {
