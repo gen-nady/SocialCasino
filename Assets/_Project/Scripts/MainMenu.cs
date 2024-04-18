@@ -4,11 +4,15 @@ using _Project.Scripts;
 using _Project.Scripts.Helpers;
 using TMPro;
 using UniRx;
+using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.SocialPlatforms.GameCenter;
+using Task = System.Threading.Tasks.Task;
 
 public class MainMenu : MonoBehaviour
 {
+    [SerializeField] private GameObject _loading;
+    [SerializeField] private GameObject _socSlot;
     [SerializeField] private GameObject _close;
     [SerializeField] private GameObject _profile;
     [SerializeField] private TextMeshProUGUI _coinText;
@@ -18,7 +22,7 @@ public class MainMenu : MonoBehaviour
     [SerializeField] private GameObject _bottomPanels;
     [SerializeField] private List<CanvasGroup> _ach;
 
-    private void Awake()
+    private async void Awake()
     {
         PlayerData.Amount.ObserveEveryValueChanged(_ => _.Value)
             .Subscribe(BalanceChanged)
@@ -78,8 +82,16 @@ public class MainMenu : MonoBehaviour
             PlayerPrefs.SetString("LastOpenDay", DateTime.Now.ToString());
             PlayerPrefs.Save();
         }
+
+        await Task.Delay(4000);
+        _loading.SetActive(false);
     }
 
+    public void ClisrWarning()
+    {
+        _socSlot.SetActive(false);
+    }
+    
     private void WinCount(int count)
     {
         if (count > 9)
