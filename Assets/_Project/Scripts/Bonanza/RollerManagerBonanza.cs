@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using _Project.Scripts.Bonanza.Enum;
+using _Project.Scripts.Helpers;
 using TMPro;
 using UniRx;
 using UnityEngine;
@@ -110,6 +111,19 @@ namespace _Project.Scripts.Bonanza
             PlayerData.Amount.Value -= _curBet * (_curReels + 1);
             PlayerPrefs.SetString("Coin", PlayerData.Amount.ToString());
             PlayerPrefs.Save();
+            var count = PlayerPrefs.GetInt("bn1");
+            count++;
+            PlayerPrefs.SetInt("bn1", count);
+            PlayerPrefs.Save();
+            var countSpin = PlayerPrefs.GetInt("bn4perDay");
+            countSpin++;
+            PlayerPrefs.SetInt("bn4perDay", countSpin);
+            PlayerPrefs.Save();
+            if (countSpin >= 500)
+            {
+                PlayerPrefs.SetInt("bn4", 1);
+                PlayerPrefs.Save();
+            }
             Observable.FromCoroutine(SpinRollers).Subscribe();
         }
         
@@ -128,11 +142,29 @@ namespace _Project.Scripts.Bonanza
                 yield return new WaitWhile(() => Rollers[i].IsSpinning);
                 yield return new WaitForSeconds(_delayBetweenRollersInSeconds);
             }
+
+            bool isWin = false;
             for (int i = 0; i < Rollers.Length; i++)
             {
                 if(!Rollers[i].ISActive) continue;
-                if (Rollers[i].Items.Any(_ => _.transform.localPosition.y is -170f or 0f or 170f && _.Type == RollerItemTypeBonanza.K))
+                if (Rollers[i].Items.Any(_ =>
+                        _.transform.localPosition.y is -170f or 0f or 170f && _.Type == RollerItemTypeBonanza.K))
+                {
                     PlayerData.Amount.Value += _amount[i];
+                    var count = ParseConverter.DecimalParse(PlayerPrefs.GetString("bn2"));
+                    count += _amount[i];
+                    PlayerPrefs.SetString("bn2", count.ToString());
+                    PlayerPrefs.Save();
+                    isWin = true;
+                }
+            }
+            if (isWin)
+            {
+                PlayerData.WinCount.Value++;
+            }
+            else
+            {
+                PlayerData.WinCount.Value = 0;
             }
             PlayerPrefs.SetString("Coin", PlayerData.Amount.ToString());
             PlayerPrefs.Save();

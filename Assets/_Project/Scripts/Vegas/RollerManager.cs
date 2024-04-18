@@ -1,7 +1,12 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text;
+using _Project.Scripts.Helpers;
+using DG.Tweening;
 using TMPro;
 using UniRx;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,6 +17,7 @@ namespace _Project.Scripts.Vegas
         public Roller[] Rollers;
         [SerializeField] private Button _spinButton;
         [SerializeField] private TextMeshProUGUI _tetBet;
+        [SerializeField] private List<GameObject> _winPanels;
         private const float _delayBetweenRollersInSeconds = 0.1f;
         private decimal _curBet = 1000;
 
@@ -23,7 +29,8 @@ namespace _Project.Scripts.Vegas
             }
             else if (_curBet + amount > PlayerData.Amount.Value)
             {
-                //ничего
+                if(amount < 0)
+                    _curBet += amount;
             }
             else
             {
@@ -43,6 +50,19 @@ namespace _Project.Scripts.Vegas
             PlayerData.Amount.Value -= _curBet;
             PlayerPrefs.SetString("Coin", PlayerData.Amount.ToString());
             PlayerPrefs.Save();
+            var count = PlayerPrefs.GetInt("bn1");
+            count++;
+            PlayerPrefs.SetInt("bn1", count);
+            PlayerPrefs.Save();
+            var countSpin = PlayerPrefs.GetInt("bn4perDay");
+            countSpin++;
+            PlayerPrefs.SetInt("bn4perDay", countSpin);
+            PlayerPrefs.Save();
+            if (countSpin >= 500)
+            {
+                PlayerPrefs.SetInt("bn4", 1);
+                PlayerPrefs.Save();
+            }
             Observable.FromCoroutine(SpinRollers).Subscribe();
         }
         
@@ -60,17 +80,51 @@ namespace _Project.Scripts.Vegas
                 yield return new WaitWhile(() => Rollers[i].IsSpinning);
                 yield return new WaitForSeconds(_delayBetweenRollersInSeconds);
             }
+
+            bool isWin = false;
             for (int j = 0; j < 3; j++)
             {
                 if (Rollers[0].Items[j].Type == Rollers[1].Items[j].Type &&
                     Rollers[1].Items[j].Type == Rollers[2].Items[j].Type)
                 {
+                    _winPanels[2-j].SetActive(true);
+                    var s = j;
+                    isWin = true;
                     PlayerData.Amount.Value += _curBet * 3;
                     PlayerPrefs.SetString("Coin", PlayerData.Amount.ToString());
                     PlayerPrefs.Save();
+                    var count = ParseConverter.DecimalParse(PlayerPrefs.GetString("bn2"));
+                    count += _curBet * 3;
+                    PlayerPrefs.SetString("bn2", count.ToString());
+                    PlayerPrefs.Save();
+                    Rollers[0].Items[j].transform.DOScale(1.2f, 0.5f).SetLoops(2, LoopType.Yoyo).OnComplete(() =>
+                        {
+                            _spinButton.interactable = true;
+                            _winPanels[2-s].SetActive(false);
+                        });
+                    Rollers[1].Items[j].transform.DOScale(1.2f, 0.5f).SetLoops(2, LoopType.Yoyo).OnComplete(() =>
+                        {
+                            _spinButton.interactable = true;
+                            _winPanels[2-s].SetActive(false);
+                        });
+                    Rollers[2].Items[j].transform.DOScale(1.2f, 0.5f).SetLoops(2, LoopType.Yoyo).OnComplete(() =>
+                        {
+                            _spinButton.interactable = true;
+                            _winPanels[2-s].SetActive(false);
+                        });
                 }
             }
-            _spinButton.interactable = true;
+
+            if (isWin)
+            {
+                PlayerData.WinCount.Value++;
+            }
+            else
+            {
+                _spinButton.interactable = true;
+                PlayerData.WinCount.Value = 0;
+            }
+          
         }
     }
 

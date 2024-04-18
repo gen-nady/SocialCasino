@@ -37,7 +37,7 @@ public class Bonus : MonoBehaviour
     public void GetBonus()
     {
         PlayerPrefs.SetString("Bonus", DateTime.Now.ToString());
-        PlayerData.Amount.Value += 700;
+        PlayerData.Amount.Value += 1500;
         PlayerPrefs.SetString("Coin", PlayerData.Amount.ToString());
         PlayerPrefs.Save();
         
