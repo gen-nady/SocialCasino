@@ -1,16 +1,29 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
 using _Project.Scripts;
 using _Project.Scripts.Helpers;
+using _Project.Scripts.Json;
 using TMPro;
 using UniRx;
-using UnityEditor.VersionControl;
 using UnityEngine;
-using UnityEngine.SocialPlatforms.GameCenter;
-using Task = System.Threading.Tasks.Task;
 
 public class MainMenu : MonoBehaviour
 {
+    public static string URI = "https://social-slots-backend-55a413a96252.herokuapp.com/";
+    public static string Token;
+    public static HttpClient Client;
+    [SerializeField] private List<User> _users;
+    [SerializeField] private TextMeshProUGUI _username1;
+    [SerializeField] private TextMeshProUGUI _username2;
+    [SerializeField] private TextMeshProUGUI _username3;
+    [SerializeField] private TextMeshProUGUI _coin1;
+    [SerializeField] private TextMeshProUGUI _coin2;
+    [SerializeField] private TextMeshProUGUI _coin3;
+    [SerializeField] private TMP_InputField _inputField;
     [SerializeField] private GameObject _loading;
     [SerializeField] private GameObject _socSlot;
     [SerializeField] private GameObject _close;
@@ -83,10 +96,52 @@ public class MainMenu : MonoBehaviour
             PlayerPrefs.Save();
         }
 
-        await Task.Delay(4000);
+        //await Task.Delay(4000);
+     
+        Client = new HttpClient();
+        var authenticationString = $"admin:ClfQnfaBqnttZxt";
+        var base64String = Convert.ToBase64String(
+            System.Text.Encoding.ASCII.GetBytes(authenticationString));
+
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", base64String);
+        var response = await Client.PostAsync($"{URI}login", null);
+        var responseBody = await response.Content.ReadAsStringAsync();
+        var json = JsonUtility.FromJson<TokenJson>(responseBody);
+        Token = json.token;
+        Debug.Log(Token);
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer" ,Token);
+        if (PlayerPrefs.HasKey("User"))
+        {
+            var user = PlayerPrefs.GetInt("User");
+            var  response1 = await Client.GetAsync($"{URI}api/players/{user}");
+            var responseBody1 = await response1.Content.ReadAsStringAsync();
+            var json1 = JsonUtility.FromJson<UserVm>(responseBody1);
+            PlayerData.Amount.Value = json1.score;
+            PlayerData.Id = json1.id;
+            _inputField.text = json1.name ?? "UserName";
+        }
+        else
+        {
+            var s = new UserVm
+            {
+                score = ((int)PlayerData.Amount.Value)
+            };
+            var  response1 = await Client.PostAsync($"{URI}api/players",  new StringContent(JsonUtility.ToJson(s), Encoding.UTF8, "application/json"));
+            var responseBody1 = await response1.Content.ReadAsStringAsync();
+            var json1 = JsonUtility.FromJson<UserVm>(responseBody1);
+            PlayerPrefs.SetInt("User", json1.id);
+            PlayerPrefs.Save();
+            PlayerData.Id = json1.id;
+            PlayerData.Amount.Value = json1.score;
+        }
         _loading.SetActive(false);
     }
-
+    [Serializable]
+    public class SS
+    {
+        public int score;
+    }
+    
     public void ClisrWarning()
     {
         _socSlot.SetActive(false);
@@ -101,12 +156,36 @@ public class MainMenu : MonoBehaviour
         }
     }
     
-    private void BalanceChanged(decimal amount)
+    
+    private async void BalanceChanged(decimal amount)
     {
         _coinText.text = CountValuesConverter.From1000toK(amount);
+        S(amount);
+    }
+
+    private async void S(decimal amount)
+    {
+        var s = new UserVm
+        {
+            name = _inputField.text,
+            score = (int)amount
+        };
+        if(PlayerData.Id == 0)  return;
+        var  response1 = await Client.PutAsync($"{URI}api/players/{PlayerData.Id}",  new StringContent(JsonUtility.ToJson(s), Encoding.UTF8, "application/json"));
+    }
+
+    public async void ChangeName()
+    {
+        var s = new UserVm
+        {
+            name = _inputField.text,
+            score = (int)PlayerData.Amount.Value
+        };
+        if(PlayerData.Id == 0)  return;
+        var  response1 = await Client.PutAsync($"{URI}api/players/{PlayerData.Id}",  new StringContent(JsonUtility.ToJson(s), Encoding.UTF8, "application/json"));
     }
     
-    public void Selected(int i)
+    public async void Selected(int i)
     {
         
         if (i == 6)
@@ -139,7 +218,7 @@ public class MainMenu : MonoBehaviour
             var bn2 = PlayerPrefs.GetString("bn2");
             var bn3 = PlayerPrefs.GetInt("bn3");
             var bn4 = PlayerPrefs.GetInt("bn4");
-            if (bn1 > 1)
+            if (bn1 > 1000)
                 _ach[0].alpha = 1;
             if (ParseConverter.DecimalParse(bn2) >= 1000000)
                 _ach[1].alpha = 1;
@@ -163,5 +242,49 @@ public class MainMenu : MonoBehaviour
         _profile.SetActive(i == 1);
         if(i == 2)
             _bonusPanel.OpenBonus();
+        if (i == 0)
+        {
+            _panels[0].SetActive(false);
+            var  response1 = await Client.GetAsync($"{URI}api/players");
+            var responseBody1 = await response1.Content.ReadAsStringAsync();
+            responseBody1 = "{\"users\":" + responseBody1 + "}";
+            var json1 = JsonUtility.FromJson<Kekes>(responseBody1);
+            var users = json1.users.OrderByDescending(_ => _.score).ToList();
+            for (int j = 0; j < _users.Count; j++)
+            {
+                if (j >= users.Count)
+                {
+                    _users[j]._userName.text = string.Empty;
+                    _users[j]._coin.text = string.Empty;
+                    _users[j]._coinG.SetActive(false);
+                }
+                else
+                {
+                    var s = users[j].name == string.Empty ? "UserName" : users[j].name ;
+                    _users[j]._userName.text = $"{j + 1}. {s}";
+                    _users[j]._coin.text = users[j].score.ToString();
+                    _users[j]._coinG.SetActive(true);
+                }
+              
+            }
+
+            if (users.Count > 0)
+            {
+               _username1.text = users[0].name == string.Empty ? "UserName" : users[0].name ;
+               _coin1.text = users[0].score.ToString();
+            }
+            if (users.Count > 1)
+            {
+                _username2.text = users[1].name  == string.Empty ? "UserName" : users[1].name ;
+                _coin2.text = users[1].score.ToString();
+            }  
+            if (users.Count > 2)
+            {
+                _username3.text = users[2].name  == string.Empty ? "UserName" : users[2].name ;
+                _coin3.text = users[2].score.ToString();
+            }
+            _panels[0].SetActive(true);
+            //json
+        }
     }
 }
