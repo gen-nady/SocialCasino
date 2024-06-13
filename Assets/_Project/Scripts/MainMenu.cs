@@ -187,7 +187,14 @@ public class MainMenu : MonoBehaviour
     
     public async void Selected(int i)
     {
-        
+        if (i == 7)
+        {
+            _panels[i].SetActive(true);
+            _close.SetActive(true);
+            _profile.SetActive(false);
+            _bottomPanels.SetActive(false);
+            return;
+        }
         if (i == 6)
         {
             _panels[i].SetActive(true);
