@@ -34,6 +34,7 @@ public class MainMenu : MonoBehaviour
     [SerializeField] private Bonus _bonusPanel;
     [SerializeField] private GameObject _bottomPanels;
     [SerializeField] private List<CanvasGroup> _ach;
+    [SerializeField] private List<GameObject> _forPlinko;
 
     private async void Awake()
     {
@@ -187,6 +188,33 @@ public class MainMenu : MonoBehaviour
     
     public async void Selected(int i)
     {
+        if (i == 9)
+        {
+            _panels[i].SetActive(true);
+            _close.SetActive(true);
+            _profile.SetActive(false);
+            _bottomPanels.SetActive(false);
+            foreach (var plin in _forPlinko)
+            {
+                plin.SetActive(false);
+            }
+            return;
+        }
+        else
+        {
+            foreach (var plin in _forPlinko)
+            {
+                plin.SetActive(true);
+            }
+        }
+        if (i == 8)
+        {
+            _panels[i].SetActive(true);
+            _close.SetActive(true);
+            _profile.SetActive(false);
+            _bottomPanels.SetActive(false);
+            return;
+        }
         if (i == 7)
         {
             _panels[i].SetActive(true);

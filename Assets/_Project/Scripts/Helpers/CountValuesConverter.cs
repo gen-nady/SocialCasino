@@ -1,3 +1,5 @@
+using System;
+
 namespace _Project.Scripts.Helpers
 {
     public class CountValuesConverter
@@ -8,18 +10,17 @@ namespace _Project.Scripts.Helpers
             if (servCount >= 1000 && servCount < 1000000)
             {
                 value = servCount / 1000;
-                return $"{value}K";
+                return $"{Math.Floor(value)}K";
             }
-
             if (servCount >= 1000000 && servCount < 1000000000)
             {
                 value = servCount / 1000000;
-                return $"{value}M";
+                return $"{Math.Floor(value)}M";
             }
             if (servCount >= 1000000000 && servCount < 1000000000000)
             {
                 value = servCount / 1000000000;
-                return $"{value}B";
+                return $"{Math.Floor(value)}B";
             }
             return $"{servCount}";
         }
